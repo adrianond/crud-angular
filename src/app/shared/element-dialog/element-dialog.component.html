@@ -1,4 +1,5 @@
-<h1 mat-dialog-title>Create element</h1>
+<h1 *ngIf="!ischange" mat-dialog-title>Create element</h1>
+<h1 *ngIf="ischange" mat-dialog-title>Edit element</h1>
 <div mat-dialog-content>
   <mat-form-field>
     <mat-label>Position</mat-label>
@@ -19,5 +20,6 @@
 </div>
 <div mat-dialog-actions>
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-button [mat-dialog-close]="data" cdkFocusInitial>Create</button>
+  <button mat-button *ngIf="!ischange" [mat-dialog-close]="data" cdkFocusInitial>Create</button>
+  <button mat-button *ngIf="ischange"  [mat-dialog-close]="data" cdkFocusInitial>Edit</button>
 </div>

@@ -8,16 +8,22 @@ import { PeriodicElement } from 'src/app/views/home/home.component';
   styleUrls: ['./element-dialog.component.scss']
 })
 export class ElementDialogComponent implements OnInit {
-  element!: PeriodicElement
+  element!: PeriodicElement;
+  ischange!: boolean;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) 
+    @Inject(MAT_DIALOG_DATA)
     public data: PeriodicElement,
     public dialogRef: MatDialogRef<ElementDialogComponent>,
-   ) { }
+  ) { }
 
   ngOnInit(): void {
+    if (this.data.position !== null) {
+      this.ischange = true;
+  } else {
+    this.ischange = false;
   }
+}
 
   onCancel(): void {
     this.dialogRef.close();
