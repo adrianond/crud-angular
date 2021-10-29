@@ -1,83 +1,94 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTable } from '@angular/material/table';
+import { PeriodicElementService } from 'src/app/service/periodic-elememt-service';
 import { ElementDialogComponent } from 'src/app/shared/element-dialog/element-dialog.component';
-
-
-export interface PeriodicElement {
-  name: string;
-  position: number;
-  weight: number;
-  symbol: string;
-}
-
-const ELEMENT_DATA: PeriodicElement[] = [
-  { position: 1, name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
-  { position: 2, name: 'Helium', weight: 4.0026, symbol: 'He' },
-  { position: 3, name: 'Lithium', weight: 6.941, symbol: 'Li' },
-  { position: 4, name: 'Beryllium', weight: 9.0122, symbol: 'Be' },
-  { position: 5, name: 'Boron', weight: 10.811, symbol: 'B' },
-  { position: 6, name: 'Carbon', weight: 12.0107, symbol: 'C' },
-  { position: 7, name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
-  { position: 8, name: 'Oxygen', weight: 15.9994, symbol: 'O' },
-  { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
-  { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
-];
+import { PeriodicElement } from 'src/app/model/periodic-element';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
+  providers: [PeriodicElementService]
 })
 export class HomeComponent implements OnInit {
   @ViewChild(MatTable)
   table!: MatTable<any>
-  displayedColumns: string[] = ['position', 'name', 'weight', 'symbol', 'actions'];
-  dataSource = ELEMENT_DATA;
+  displayedColumns: string[] = ['id', 'name', 'weight', 'symbol', 'actions'];
+  dataSource!: PeriodicElement[];
 
-  constructor(public dialog: MatDialog) { }
-
+  constructor(
+    private dialog: MatDialog,
+    private periodicElementService: PeriodicElementService
+  ) {
+    this.getElementos();
+  }
+  
   ngOnInit(): void {
   }
+  
 
+  getElementos() {
+    this.periodicElementService.getPeriodicElements()
+      .subscribe((data: PeriodicElement[]) => {
+        console.log('data get', data)
+        this.dataSource = data;
+        console.log('dataSource', this.dataSource)
+      }, (err) => {
+        console.log('Erro na consulta', err);
+      })
+      
+  }
+  
+  
   openDialog(element: PeriodicElement | null): void {
     const dialogRef = this.dialog.open(ElementDialogComponent, {
       width: '250px',
       data: element === null ? { // estou adicionando um elemento
-        position: null,
+        id: null,
         name: '',
         weight: null,
         symbol: ''
-      } : { // senao,estou adicionando um elemento
-        position: element.position,
+      } : { // senao,estou alterando um elemento
+        id: element.id,
         name: element.name,
         weight: element.weight,
         symbol: element.symbol
-      } // estou alterando
+      }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       //result -> resultado quando fecha o dialog
       if (result !== undefined) { // se cancelar ou clicar fora do modal o value será undefined
-        //se no datasource já conter a posição que está no resultado
-        if (this.dataSource.map(element => element.position).includes(result.position)) {
-          //: pega o datasource passando a posição do resultado e recebe o nome result
-          this.dataSource[result.position - 1] = result;
+        if (this.dataSource !== undefined
+          //se no datasource já conter a posição que está no resultado
+          && this.dataSource.map(element => element.id).includes(result.id)) {
+          //pega o datasource passando a posição do resultado e recebe o nome result
+          this.dataSource[result.id - 1] = result;
           this.table.renderRows();
         } else {
-          this.dataSource.push(result);
-          this.table.renderRows();
+          this.periodicElementService.createElement(result)
+            .subscribe((data: PeriodicElement) => {
+              console.log('data', data)
+              console.log('result', result)
+              this.dataSource.push(result);
+              this.table.renderRows();
+            }, (err) => {
+              console.log('Erro no cadastro', err);
+            })
         }
       }
     });
   }
 
+
   editElement(element: PeriodicElement): void {
     this.openDialog(element);
   }
 
-  deleteElement(position: number): void {
-    this.dataSource = this.dataSource.filter(element => element.position !== position)
+  deleteElement(id: number): void {
+    this.dataSource = this.dataSource.filter(element => element.id !== id)
+    this.periodicElementService.deleteElement(id);
   }
-
+ 
 }
