@@ -1,9 +1,11 @@
-import { AfterViewInit, Component, OnChanges, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTable } from '@angular/material/table';
 import { PeriodicElementService } from 'src/app/service/periodic-elememt-service';
 import { ElementDialogComponent } from 'src/app/shared/element-dialog/element-dialog.component';
 import { PeriodicElement } from 'src/app/model/periodic-element';
+import { PeriodicElementsResponse } from 'src/app/model/response/periodic-elements-response';
+import { PeriodicElementResponse } from 'src/app/model/response/periodic-element-response';
 
 @Component({
   selector: 'app-home',
@@ -14,7 +16,7 @@ import { PeriodicElement } from 'src/app/model/periodic-element';
 export class HomeComponent implements OnInit {
   @ViewChild(MatTable)
   table!: MatTable<any>
-  displayedColumns: string[] = ['id', 'name', 'weight', 'symbol', 'actions'];
+  displayedColumns: string[] = ['name', 'weight', 'symbol', 'actions'];
   dataSource!: PeriodicElement[];
 
   constructor(
@@ -23,24 +25,21 @@ export class HomeComponent implements OnInit {
   ) {
     this.getElementos();
   }
-  
+
   ngOnInit(): void {
   }
-  
+
 
   getElementos() {
     this.periodicElementService.getPeriodicElements()
-      .subscribe((data: PeriodicElement[]) => {
-        console.log('data get', data)
-        this.dataSource = data;
-        console.log('dataSource', this.dataSource)
+      .subscribe((response: PeriodicElementsResponse) => {
+        this.dataSource = response.elementos;
       }, (err) => {
         console.log('Erro na consulta', err);
       })
-      
   }
-  
-  
+
+
   openDialog(element: PeriodicElement | null): void {
     const dialogRef = this.dialog.open(ElementDialogComponent, {
       width: '250px',
@@ -56,22 +55,22 @@ export class HomeComponent implements OnInit {
         symbol: element.symbol
       }
     });
-
+    //result -> resultado quando fecha o dialog
     dialogRef.afterClosed().subscribe(result => {
-      //result -> resultado quando fecha o dialog
-      if (result !== undefined) { // se cancelar ou clicar fora do modal o value será undefined
-        if (this.dataSource !== undefined
-          //se no datasource já conter a posição que está no resultado
-          && this.dataSource.map(element => element.id).includes(result.id)) {
-          //pega o datasource passando a posição do resultado e recebe o nome result
-          this.dataSource[result.id - 1] = result;
-          this.table.renderRows();
+      // se cancelar ou clicar fora do modal o value será undefined
+      if (result !== undefined) {
+        //se no datasource já conter a posição que está no resultado
+        if (this.dataSource.map(element => element.id).includes(result.id)) {
+          this.periodicElementService.updateElement(result.id, result)
+            .subscribe((response: PeriodicElementResponse) => {
+              this.getElementos();
+          }, (err) => {
+            console.log('Erro na alteração do cadastro', err);
+          });
         } else {
           this.periodicElementService.createElement(result)
-            .subscribe((data: PeriodicElement) => {
-              console.log('data', data)
-              console.log('result', result)
-              this.dataSource.push(result);
+            .subscribe((response: PeriodicElementResponse) => {
+              this.dataSource.push(response.elemento);
               this.table.renderRows();
             }, (err) => {
               console.log('Erro no cadastro', err);
@@ -87,8 +86,10 @@ export class HomeComponent implements OnInit {
   }
 
   deleteElement(id: number): void {
-    this.dataSource = this.dataSource.filter(element => element.id !== id)
-    this.periodicElementService.deleteElement(id);
+    this.periodicElementService.deleteElement(id)
+      .subscribe(() => {
+        this.dataSource = this.dataSource.filter(element => element.id !== id)
+      })
   }
- 
+
 }

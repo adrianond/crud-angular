@@ -1,8 +1,10 @@
 import { Injectable, NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PeriodicElement } from '../model/periodic-element';
+import { PeriodicElementsResponse } from '../model/response/periodic-elements-response';
+import { PeriodicElementResponse } from '../model/response/periodic-element-response';
+
 
 @Injectable()
 export class PeriodicElementService {
@@ -11,22 +13,19 @@ export class PeriodicElementService {
     constructor(private http: HttpClient) {
     }
 
-    public getPeriodicElements(): Observable<PeriodicElement[]> {
-        return this.http.get<PeriodicElement[]>(this.elementUrlApi);
+    public getPeriodicElements(): Observable<PeriodicElementsResponse> {
+        return this.http.get<PeriodicElementsResponse>(this.elementUrlApi);
     }
 
-    public createElement(element: PeriodicElement): Observable<PeriodicElement> {
-        console.log('criando', element)
-        return this.http.post<PeriodicElement>(this.elementUrlApi, element);
+    public createElement(element: PeriodicElement): Observable<PeriodicElementResponse> {
+        return this.http.post<PeriodicElementResponse>(this.elementUrlApi, element);
     }
 
-    public updateElement(id: number, element: PeriodicElement): void {
-        console.log('alterando', element)
-        this.http.put<PeriodicElement>(this.elementUrlApi+'/'+`${id}`, element);
+    public updateElement(id: number, element: PeriodicElement): Observable<PeriodicElementResponse> {
+        return this.http.put<PeriodicElementResponse>(this.elementUrlApi+'/'+`${id}`, element);
     }
 
-    public deleteElement(id: number): void {
-        console.log('excluindo', id)
-        this.http.delete<any>(this.elementUrlApi+'/'+`${id}`);
+    public deleteElement(id: number): Observable<any> {
+        return this.http.delete<any>(this.elementUrlApi+'/'+`${id}`);
     }
 }
